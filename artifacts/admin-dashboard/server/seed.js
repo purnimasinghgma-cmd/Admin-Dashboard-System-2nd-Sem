@@ -141,8 +141,8 @@ async function seed() {
 
   console.log("Seeding orders...");
   let orderCount = 0;
-  for (let day = 60; day >= 0; day--) {
-    const ordersToday = rand(4, 14);
+  for (let day = 90; day >= 0; day--) {
+    const ordersToday = rand(14, 32);
     for (let n = 0; n < ordersToday; n++) {
       orderCount++;
       const product = pick(PRODUCTS);
