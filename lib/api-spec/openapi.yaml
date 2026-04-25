@@ -3,20 +3,29 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Admin Dashboard API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication and current user
+  - name: users
+    description: Manage application users
+  - name: products
+    description: Manage product catalog
+  - name: orders
+    description: Manage customer orders / sales
+  - name: dashboard
+    description: Dashboard summary and analytics
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +33,523 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get the currently signed-in user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUser"
+  /auth/switch-role:
+    post:
+      operationId: switchRole
+      tags: [auth]
+      summary: Switch the active demo role (admin / manager / user)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SwitchRoleBody"
+      responses:
+        "200":
+          description: Updated current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUser"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List users
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema: { type: string }
+        - name: role
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/UserRole" }
+        - name: status
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/UserStatus" }
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/User" }
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateUserBody" }
+      responses:
+        "201":
+          description: Created user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateUserBody" }
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List products
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema: { type: string }
+        - name: category
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Product" }
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Create a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateProductBody" }
+      responses:
+        "201":
+          description: Created product
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Product" }
+  /products/{id}:
+    patch:
+      operationId: updateProduct
+      tags: [products]
+      summary: Update a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateProductBody" }
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Product" }
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Delete a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  /orders:
+    get:
+      operationId: listOrders
+      tags: [orders]
+      summary: List orders / sales
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema: { type: string }
+        - name: status
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/OrderStatus" }
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Order" }
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Create an order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateOrderBody" }
+      responses:
+        "201":
+          description: Created order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+  /orders/{id}:
+    patch:
+      operationId: updateOrder
+      tags: [orders]
+      summary: Update an order status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateOrderBody" }
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Top-level KPIs (revenue, orders, users, AOV)
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DashboardSummary" }
+  /dashboard/sales-by-day:
+    get:
+      operationId: getSalesByDay
+      tags: [dashboard]
+      summary: Daily sales/revenue series for the last 30 days
+      responses:
+        "200":
+          description: Series
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SalesPoint" }
+  /dashboard/users-by-day:
+    get:
+      operationId: getUsersByDay
+      tags: [dashboard]
+      summary: Daily new-user signups for the last 30 days
+      responses:
+        "200":
+          description: Series
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/UsersPoint" }
+  /dashboard/sales-by-category:
+    get:
+      operationId: getSalesByCategory
+      tags: [dashboard]
+      summary: Revenue grouped by product category
+      responses:
+        "200":
+          description: Breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CategorySales" }
+  /dashboard/top-products:
+    get:
+      operationId: getTopProducts
+      tags: [dashboard]
+      summary: Best-selling products by revenue
+      responses:
+        "200":
+          description: Top products
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TopProduct" }
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Recent activity feed (orders, signups, edits)
+      responses:
+        "200":
+          description: Activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ActivityItem" }
+  /dashboard/order-status-breakdown:
+    get:
+      operationId: getOrderStatusBreakdown
+      tags: [dashboard]
+      summary: Counts of orders by status
+      responses:
+        "200":
+          description: Breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/OrderStatusCount" }
+
 components:
   schemas:
     HealthStatus:
       type: object
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
+      required: [status]
 
+    UserRole:
+      type: string
+      enum: [admin, manager, user]
+    UserStatus:
+      type: string
+      enum: [active, invited, suspended]
+    OrderStatus:
+      type: string
+      enum: [pending, paid, shipped, refunded, cancelled]
+
+    CurrentUser:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        role: { $ref: "#/components/schemas/UserRole" }
+        avatarUrl: { type: string, nullable: true }
+      required: [id, name, email, role]
+    SwitchRoleBody:
+      type: object
+      properties:
+        role: { $ref: "#/components/schemas/UserRole" }
+      required: [role]
+
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        role: { $ref: "#/components/schemas/UserRole" }
+        status: { $ref: "#/components/schemas/UserStatus" }
+        avatarUrl: { type: string, nullable: true }
+        lastActiveAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+      required: [id, name, email, role, status, createdAt]
+    CreateUserBody:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        email: { type: string }
+        role: { $ref: "#/components/schemas/UserRole" }
+        status: { $ref: "#/components/schemas/UserStatus" }
+      required: [name, email, role]
+    UpdateUserBody:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        email: { type: string }
+        role: { $ref: "#/components/schemas/UserRole" }
+        status: { $ref: "#/components/schemas/UserStatus" }
+
+    Product:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        sku: { type: string }
+        category: { type: string }
+        price: { type: number }
+        stock: { type: integer }
+        createdAt: { type: string, format: date-time }
+      required: [id, name, sku, category, price, stock, createdAt]
+    CreateProductBody:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        sku: { type: string, minLength: 1 }
+        category: { type: string, minLength: 1 }
+        price: { type: number, minimum: 0 }
+        stock: { type: integer, minimum: 0 }
+      required: [name, sku, category, price, stock]
+    UpdateProductBody:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        sku: { type: string, minLength: 1 }
+        category: { type: string, minLength: 1 }
+        price: { type: number, minimum: 0 }
+        stock: { type: integer, minimum: 0 }
+
+    Order:
+      type: object
+      properties:
+        id: { type: integer }
+        orderNumber: { type: string }
+        customerName: { type: string }
+        customerEmail: { type: string }
+        productName: { type: string }
+        amount: { type: number }
+        status: { $ref: "#/components/schemas/OrderStatus" }
+        createdAt: { type: string, format: date-time }
+      required: [id, orderNumber, customerName, customerEmail, productName, amount, status, createdAt]
+    CreateOrderBody:
+      type: object
+      properties:
+        customerName: { type: string, minLength: 1 }
+        customerEmail: { type: string }
+        productId: { type: integer }
+        amount: { type: number, minimum: 0 }
+        status: { $ref: "#/components/schemas/OrderStatus" }
+      required: [customerName, customerEmail, productId, amount]
+    UpdateOrderBody:
+      type: object
+      properties:
+        status: { $ref: "#/components/schemas/OrderStatus" }
+      required: [status]
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalRevenue: { type: number }
+        revenueChangePct: { type: number }
+        totalOrders: { type: integer }
+        ordersChangePct: { type: number }
+        totalUsers: { type: integer }
+        usersChangePct: { type: number }
+        averageOrderValue: { type: number }
+        aovChangePct: { type: number }
+        activeProducts: { type: integer }
+      required: [totalRevenue, revenueChangePct, totalOrders, ordersChangePct, totalUsers, usersChangePct, averageOrderValue, aovChangePct, activeProducts]
+    SalesPoint:
+      type: object
+      properties:
+        date: { type: string, format: date }
+        revenue: { type: number }
+        orders: { type: integer }
+      required: [date, revenue, orders]
+    UsersPoint:
+      type: object
+      properties:
+        date: { type: string, format: date }
+        signups: { type: integer }
+        activeUsers: { type: integer }
+      required: [date, signups, activeUsers]
+    CategorySales:
+      type: object
+      properties:
+        category: { type: string }
+        revenue: { type: number }
+        orders: { type: integer }
+      required: [category, revenue, orders]
+    TopProduct:
+      type: object
+      properties:
+        productId: { type: integer }
+        name: { type: string }
+        category: { type: string }
+        unitsSold: { type: integer }
+        revenue: { type: number }
+      required: [productId, name, category, unitsSold, revenue]
+    OrderStatusCount:
+      type: object
+      properties:
+        status: { $ref: "#/components/schemas/OrderStatus" }
+        count: { type: integer }
+      required: [status, count]
+    ActivityItem:
+      type: object
+      properties:
+        id: { type: integer }
+        type:
+          type: string
+          enum: [order, signup, refund, product]
+        title: { type: string }
+        description: { type: string }
+        amount: { type: number, nullable: true }
+        createdAt: { type: string, format: date-time }
+      required: [id, type, title, description, createdAt]

@@ -1,2 +1,22 @@
 export * from "./generated/api";
-export * from "./generated/types";
+export type {
+  ActivityItem,
+  ActivityItemType,
+  CategorySales,
+  CurrentUser,
+  DashboardSummary,
+  HealthStatus,
+  ListOrdersParams,
+  ListProductsParams,
+  ListUsersParams,
+  Order,
+  OrderStatus,
+  OrderStatusCount,
+  Product,
+  SalesPoint,
+  TopProduct,
+  User,
+  UserRole,
+  UserStatus,
+  UsersPoint,
+} from "./generated/types";
