@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { pool, query } from "./db.js";
 
 const FIRST = [
@@ -52,9 +53,7 @@ function rand(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-async function seed() {
-  console.log("Resetting tables...");
-  await query(`DROP TABLE IF EXISTS orders, products, users, session CASCADE`);
+export async function ensureSchema() {
   await query(`
     CREATE TABLE IF NOT EXISTS session (
       id text PRIMARY KEY,
@@ -92,12 +91,13 @@ async function seed() {
       created_at timestamp NOT NULL DEFAULT now()
     );
   `);
-  await query(`TRUNCATE orders, products, users, session RESTART IDENTITY`);
-
   await query(
-    `INSERT INTO session (id, role) VALUES ('default', 'admin')`,
+    `INSERT INTO session (id, role) VALUES ('default', 'admin')
+     ON CONFLICT (id) DO NOTHING`,
   );
+}
 
+async function populateDemoData() {
   console.log("Seeding users...");
   const usedEmails = new Set();
   const userNames = [];
@@ -110,7 +110,10 @@ async function seed() {
     usedEmails.add(email);
     userNames.push(name);
     const role = i === 0 ? "admin" : i < 6 ? "manager" : "user";
-    const status = pickWeighted(["active", "invited", "suspended"], [0.78, 0.16, 0.06]);
+    const status = pickWeighted(
+      ["active", "invited", "suspended"],
+      [0.78, 0.16, 0.06],
+    );
     const daysAgo = rand(0, 90);
     const createdAt = new Date();
     createdAt.setDate(createdAt.getDate() - daysAgo);
@@ -173,14 +176,37 @@ async function seed() {
       );
     }
   }
-
   console.log(
     `Seeded: ${userNames.length} users, ${PRODUCTS.length} products, ${orderCount} orders`,
   );
-  await pool.end();
 }
 
-seed().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+export async function seedIfEmpty() {
+  await ensureSchema();
+  const r = await query(`SELECT COUNT(*)::int AS c FROM users`);
+  if (r.rows[0].c > 0) {
+    console.log("[seed] database already populated, skipping");
+    return false;
+  }
+  console.log("[seed] database empty, seeding demo data...");
+  await populateDemoData();
+  return true;
+}
+
+export async function seedReset() {
+  console.log("Resetting tables...");
+  await query(`DROP TABLE IF EXISTS orders, products, users, session CASCADE`);
+  await ensureSchema();
+  await populateDemoData();
+}
+
+const isMain =
+  process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isMain) {
+  seedReset()
+    .then(() => pool.end())
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}

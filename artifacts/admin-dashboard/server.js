@@ -3,12 +3,19 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs";
 import { apiRouter } from "./server/routes/index.js";
+import { seedIfEmpty } from "./server/seed.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProd = process.env.NODE_ENV === "production";
 const PORT = Number(process.env.PORT) || 22133;
 
 async function main() {
+  try {
+    await seedIfEmpty();
+  } catch (err) {
+    console.error("[startup] seed check failed:", err);
+  }
+
   const app = express();
   app.use(express.json());
 
