@@ -18,13 +18,22 @@ localPort = 22133
 run = "pnpm --filter @workspace/admin-dashboard run dev"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/admin-dashboard", "run", "build" ]
-publicDir = "artifacts/admin-dashboard/dist/public"
-serve = "static"
 
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
+[services.production.build]
+args = ["pnpm", "--filter", "@workspace/admin-dashboard", "run", "build"]
+
+[services.production.build.env]
+NODE_ENV = "production"
+
+[services.production.run]
+args = ["node", "artifacts/admin-dashboard/server.js"]
+
+[services.production.run.env]
+NODE_ENV = "production"
+PORT = "22133"
+
+[services.production.health.startup]
+path = "/api/healthz"
 
 [services.env]
 PORT = "22133"
